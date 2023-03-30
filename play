@@ -1,0 +1,146 @@
+import pygame
+
+# initialize pygame
+pygame.init()
+
+window_width = 800
+window_height = 600
+
+# create the window
+window = pygame.display.set_mode((window_width, window_height))
+
+# set the title of the window
+pygame.display.set_caption("Platformer Game")
+
+# clock to control the frame rate
+clock = pygame.time.Clock()
+
+# define colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+
+# define player properties
+player_x = 50
+player_y = 50
+player_width = 40
+player_height = 60
+player_speed = 5
+player_jump_speed = 10
+player_jump = False
+player_jump_count = 10
+
+# define movement keys
+left = False
+right = False
+
+# define ground properties
+ground_level = 500
+ground_width = window_width
+ground_height = 100
+
+# define platform properties
+platform_width = 100
+platform_height = 20
+
+# define font
+font = pygame.font.Font(None, 30)
+
+# create a list of platforms
+platforms = [
+    (400, 400),
+    (550, 300),
+    (250, 200)
+]
+
+def draw_player(x, y):
+    pygame.draw.rect(window, GREEN, [x, y, player_width, player_height])
+
+def draw_platform(x, y):
+    pygame.draw.rect(window, BLACK, [x, y, platform_width, platform_height])
+
+def draw_ground():
+    pygame.draw.rect(window, BLACK, [0, ground_level, ground_width, ground_height])
+
+def display_score(score):
+    text = font.render("Score: " + str(score), True, WHITE)
+    window.blit(text, [10, 10])
+
+def is_on_platform():
+    for platform in platforms:
+        if player_y + player_height == platform[1] and player_x + player_width > platform[0] and player_x < platform[0] + platform_width:
+            return True
+    return False
+
+# main game loop
+score = 0
+game_over = False
+while not game_over:
+
+    # handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            game_over = True
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                left = True
+            if event.key == pygame.K_RIGHT:
+                right = True
+            if event.key == pygame.K_SPACE and not player_jump:
+                player_jump = True
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                left = False
+            if event.key == pygame.K_RIGHT:
+                right = False
+
+    # update player position
+    if left:
+        player_x -= player_speed
+    if right:
+        player_x += player_speed
+
+    # check for collision with platforms
+    if is_on_platform():
+        player_jump_count = 0
+    else:
+        player_jump_count += 1
+
+    # handle player jumping
+    if player_jump:
+        player_y -= player_jump_speed
+        player_jump_count -= 1
+        if player_jump_count <= 0:
+            player_jump = False
+            player_jump_count = 10
+
+    # check for collision with the ground
+    if player_y + player_height >= ground_level:
+        player_y = ground_level - player_height
+
+    # check for collision with the sides of the window
+    if player_x < 0:
+        player_x = 0
+    elif player_x + player_width > window_width:
+        player_x = window_width - player_width
+
+    # draw the game objects
+    window.fill(WHITE)
+    draw_player(player_x, player_y)
+    draw_ground()
+    for platform in platforms:
+        draw_platform(platform[0], platform[1])
+        if player_x + player_width > platform[0] and player_x < platform[0] + platform_width and player_y + player_height == platform[1]:
+            platforms.remove(platform)
+            score += 10
+            
+    display_score(score)
+
+    # update the display
+    pygame.display.update()
+
+    # control the frame rate
+    clock.tick(60)
+
+# quit pygame
+pygame.quit()
